@@ -12,6 +12,7 @@ from .asset import Asset
 from .webhook import Webhook
 from .webhook_event import WebhookEvent
 from .audit_log import AuditLog
+from .refresh_token import RefreshToken
 
 __all__ = (
     "Base",
@@ -28,4 +29,5 @@ __all__ = (
     "Webhook",
     "WebhookEvent",
     "AuditLog",
+    "RefreshToken",
 )

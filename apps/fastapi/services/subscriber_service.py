@@ -4,13 +4,9 @@ from sqlalchemy.orm import Session
 from ..models.subscriber import Subscriber
 from ..schemas.subscriber import SubscriberCreate, SubscriberUpdate
 
-def list_subscribers(db: Session, skip: int = 0, limit: int = 100) -> List[Subscriber]:
-    return (
-        db.query(Subscriber)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+def list_subscribers(db: Session, skip: int = 0, limit: int = 100):
+    query = db.query(Subscriber)
+    return query.offset(skip).limit(limit).all()
 
 def get_subscriber(db: Session, subscriber_id: int) -> Optional[Subscriber]:
     return db.query(Subscriber).filter(Subscriber.id == subscriber_id).first()
