@@ -16,7 +16,6 @@ from ....services.token_service import save_refresh_token, revoke_token, is_toke
 
 router = APIRouter()
 
-
 @router.post("/login", response_model=Token)
 def login(
     response: Response,

@@ -1,6 +1,7 @@
 ﻿from typing import List, Optional
 from sqlalchemy.orm import Session
-
+from ..tasks.email import send_campaign_email
+from ..models.campaign_recipient import CampaignRecipient
 from ..models.campaign import Campaign
 from ..schemas.campaign import CampaignCreate, CampaignUpdate
 
@@ -32,3 +33,16 @@ def delete_campaign(db: Session, campaign_id: int) -> None:
     if campaign:
         db.delete(campaign)
         db.commit()
+
+def dispatch_campaign(db: Session, campaign_id: int):
+    """
+    Enqueue all recipients of a campaign.
+    Owner/admin only.
+    """
+    recipients = (
+        db.query(CampaignRecipient.id)
+        .filter(CampaignRecipient.campaign_id == campaign_id, CampaignRecipient.status == "pending")
+        .all()
+    )
+    for (recipient_id,) in recipients:
+        send_campaign_email.delay(recipient_id)

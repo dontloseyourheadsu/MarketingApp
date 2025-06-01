@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, Query
+from ....core.rate_limit import limit
 
 from ....core.database import get_db
 from ....core.deps import (
@@ -17,12 +18,13 @@ from ....services.campaign_service import (
     delete_campaign,
     get_campaign,
     update_campaign,
+    dispatch_campaign,
 )
 from ....models.campaign import Campaign
 
 router = APIRouter()
 
-@router.get("/", response_model=List[CampaignRead])
+@router.get("/", response_model=List[CampaignRead],dependencies=[Depends(limit())])
 def list_(
     _: Annotated[None, Depends(require_roles("owner", "admin", "member"))],
     pag: Annotated[dict, Depends(pagination_params)],
@@ -36,14 +38,14 @@ def list_(
 
 @router.post(
     "/", response_model=CampaignRead, status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("owner", "admin"))],
+    dependencies=[Depends(require_roles("owner", "admin")), Depends(limit())],
 )
 def create(campaign_in: CampaignCreate, db: Session = Depends(get_db)):
     return create_campaign(db, campaign_in)
 
 @router.get(
     "/{campaign_id}", response_model=CampaignRead,
-    dependencies=[Depends(require_roles("owner", "admin", "member"))],
+    dependencies=[Depends(require_roles("owner", "admin", "member")), Depends(limit())],
 )
 def read(campaign_id: int, db: Session = Depends(get_db)):
     campaign = get_campaign(db, campaign_id)
@@ -53,14 +55,23 @@ def read(campaign_id: int, db: Session = Depends(get_db)):
 
 @router.put(
     "/{campaign_id}", response_model=CampaignRead,
-    dependencies=[Depends(require_roles("owner", "admin"))],
+    dependencies=[Depends(require_roles("owner", "admin")), Depends(limit())],
 )
 def update(campaign_id: int, data: CampaignUpdate, db: Session = Depends(get_db)):
     return update_campaign(db, campaign_id, data)
 
 @router.delete(
     "/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("owner"))],
+    dependencies=[Depends(require_roles("owner")), Depends(limit())],
 )
 def delete(campaign_id: int, db: Session = Depends(get_db)):
     delete_campaign(db, campaign_id)
+
+@router.post(
+    "/{campaign_id}/send", status_code=202,
+    dependencies=[Depends(require_roles("owner", "admin"))],
+)
+
+def send_campaign(campaign_id: int, db: Session = Depends(get_db)):
+    dispatch_campaign(db, campaign_id)
+    return {"detail": "Campaign enqueued"}

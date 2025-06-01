@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, Query
-
+from ....core.rate_limit import limit
 from ....core.database import get_db
 from ....core.deps import (
     require_roles,
@@ -23,7 +23,7 @@ from ....models.subscriber import Subscriber
 router = APIRouter()
 
 # --- List ------------------------------------------------------------------- #
-@router.get("/", response_model=List[SubscriberRead])
+@router.get("/", response_model=List[SubscriberRead],dependencies=[Depends(limit())])
 def list_(
     _: Annotated[None, Depends(require_roles("owner", "admin", "member"))],
     pag: Annotated[dict, Depends(pagination_params)],
@@ -39,14 +39,14 @@ def list_(
 # --- CRUD ------------------------------------------------------------------- #
 @router.post(
     "/", response_model=SubscriberRead, status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("owner", "admin"))],
+    dependencies=[Depends(require_roles("owner", "admin")), Depends(limit())],
 )
 def create(subscriber_in: SubscriberCreate, db: Session = Depends(get_db)):
     return create_subscriber(db, subscriber_in)
 
 @router.get(
     "/{subscriber_id}", response_model=SubscriberRead,
-    dependencies=[Depends(require_roles("owner", "admin", "member"))],
+    dependencies=[Depends(require_roles("owner", "admin", "member")), Depends(limit())],
 )
 def read(subscriber_id: int, db: Session = Depends(get_db)):
     subscriber = get_subscriber(db, subscriber_id)
@@ -56,14 +56,14 @@ def read(subscriber_id: int, db: Session = Depends(get_db)):
 
 @router.put(
     "/{subscriber_id}", response_model=SubscriberRead,
-    dependencies=[Depends(require_roles("owner", "admin"))],
+    dependencies=[Depends(require_roles("owner", "admin")), Depends(limit())],
 )
 def update(subscriber_id: int, data: SubscriberUpdate, db: Session = Depends(get_db)):
     return update_subscriber(db, subscriber_id, data)
 
 @router.delete(
     "/{subscriber_id}", status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("owner"))],
+    dependencies=[Depends(require_roles("owner")), Depends(limit())],
 )
 def delete(subscriber_id: int, db: Session = Depends(get_db)):
     delete_subscriber(db, subscriber_id)

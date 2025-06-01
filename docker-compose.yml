@@ -40,6 +40,27 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: .
+      dockerfile: docker/fastapi/Dockerfile   # re-use image w/ deps
+    command: [ "celery", "-A", "apps.fastapi_app.tasks", "worker", "-l", "info" ]
+    depends_on:
+      - redis
+      - db
+    env_file: .env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
   # fastapi:
   #   build:
   #     context: .

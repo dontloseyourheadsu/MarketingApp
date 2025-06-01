@@ -15,9 +15,12 @@ from sqlalchemy.orm import Query, Session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+from fastapi import Request
+
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Session = Depends(get_db),
+    request: Request = Depends(),
 ) -> User:
     try:
         payload = decode_token(token)
@@ -30,6 +33,8 @@ def get_current_user(
     user = get_user_by_id(db, int(user_id))
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
+    
+    request.state.user_id = user.id
     return user
 
 
