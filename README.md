@@ -164,7 +164,71 @@ User ||--o{ AdSendEvent : triggers
 @enduml
 ```
 
-####
+#### NoSQL Document Schemas (MongoDB)
+
+![NoSQL Document Schemas](README.images/nosql_document_schemas.png)
+
+``` plantuml
+@startuml
+skinparam classAttributeIconSize 0
+
+class User << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + name : string
+   + email : string
+   + role : string    // 'marketing' or 'consumer'
+   + team_id : ObjectId
+}
+
+class Team << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + name : string
+   + description : string
+   + member_ids : List<ObjectId>
+}
+
+class Media << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + type : string       // 'image' or 'video'
+   + url : string
+   + metadata : object
+   + uploaded_by : ObjectId
+   + created_at : date
+}
+
+class Ad << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + title : string
+   + description : string
+   + media_ids : List<ObjectId>
+   + status : string     // 'draft','scheduled','published'
+   + created_by : ObjectId
+   + team_id : ObjectId
+}
+
+class EmailGroup << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + name : string
+   + description : string
+}
+
+class EmailSubscriber << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + email : string
+   + group_id : ObjectId
+   + subscribed_at : date
+}
+
+class AdSendEvent << (D,#FFAAAA) document >> {
+   + _id : ObjectId
+   + ad_id : ObjectId
+   + email_group_id : ObjectId
+   + sent_by : ObjectId
+   + status : string    // 'pending','sent','failed'
+   + sent_at : date
+}
+@enduml
+```
 
 ---
 
