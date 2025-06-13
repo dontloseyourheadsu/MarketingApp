@@ -1,213 +1,48 @@
 # Technical Specifications
 
-## 🧩 Data Models
+## Introduction
 
-### Simplified Data Models
+This document outlines the technical architecture and specifications for the Marketing App platform. The system is designed as a comprehensive solution for marketing teams to manage content, run email campaigns, and collaborate on advertising materials.
 
-```plaintext
-User { id, name, email, role, team_id }
-Team { id, name, description }
-Media { id, type: image|video, url, metadata, uploaded_by, created_at }
-Ad { id, title, description, media_ids[], status, created_by, team_id }
-EmailSubscriber { id, email, group_id, subscribed_at }
-EmailGroup { id, name, description }
-AdSendEvent { id, ad_id, email_group_id, sent_by, status, sent_at }
-```
+The architecture follows a microservices approach with a focus on scalability, security, and maintainability. Key technical decisions include:
 
-### SQL UML Diagram (PostgreSQL)
+- **Database Strategy**: Hybrid approach using PostgreSQL for transactional data and MongoDB for content
+- **API Design**: RESTful APIs with standardized error handling and authentication
+- **Security**: JWT-based authentication with role-based access controls
+- **Media Handling**: S3/CloudFront architecture with CDN integration
+- **Background Processing**: Robust job scheduling for email campaigns and analytics
 
-![SQL UML Diagram](images/sql_uml_diagram.png)
+The implementation supports multiple deployment environments (development, staging, production) with infrastructure-as-code principles and CI/CD integration.
 
-```plantuml
-@startuml
-entity "User" as User {
-  * id : UUID
-  --
-  name : VARCHAR
-  email : VARCHAR
-  role : ENUM('marketing','consumer')
-  team_id : UUID
-}
+## System Architecture Overview
 
-entity "Team" as Team {
-  * id : UUID
-  --
-  name : VARCHAR
-  description : TEXT
-}
+The Marketing App consists of several interconnected services:
 
-entity "Media" as Media {
-  * id : UUID
-  --
-  type : ENUM('image','video')
-  url : VARCHAR
-  metadata : JSONB
-  uploaded_by : UUID
-  created_at : TIMESTAMP
-}
+1. **User/Team Management Service**: Handles authentication, authorization, and team collaboration
+2. **Media Management Service**: Manages upload, storage, and retrieval of media assets
+3. **Ad Creation Service**: Provides tooling for creating and managing advertisements
+4. **Email Campaign Service**: Manages subscriber lists and campaign execution
+5. **Analytics Service**: Tracks engagement metrics and provides reporting capabilities
 
-entity "Ad" as Ad {
-  * id : UUID
-  --
-  title : VARCHAR
-  description : TEXT
-  status : ENUM('draft','scheduled','published')
-  created_by : UUID
-  team_id : UUID
-}
+Each service is independently deployable and scalable, communicating through well-defined APIs.
 
-entity "AdMedia" as AdMedia {
-  * ad_id : UUID
-  * media_id : UUID
-}
+## Sections
 
-entity "EmailGroup" as EmailGroup {
-  * id : UUID
-  --
-  name : VARCHAR
-  description : TEXT
-}
+- [Data Models](Technical_Specs/data-models.md) - Database schemas for both SQL and NoSQL
+- [Core APIs](Technical_Specs/core-apis.md) - List of API endpoints and their functionality
+- [Non-Functional Requirements](Technical_Specs/non-functional-requirements.md) - Consistency, idempotency, and performance
+- [Authentication & Authorization](Technical_Specs/auth.md) - Security flows and implementation
+- [Error Handling](Technical_Specs/error-handling.md) - Standard response formats and status codes
+- [Media Storage](Technical_Specs/media-storage.md) - Architecture for storing and serving media
+- [Unsubscribe Management](Technical_Specs/unsubscribe.md) - APIs and flows for subscription management
+- [Scheduling Engine](Technical_Specs/scheduling.md) - Job scheduling system design
+- [Analytics](Technical_Specs/analytics.md) - Data collection and reporting system
 
-entity "EmailSubscriber" as EmailSubscriber {
-  * id : UUID
-  --
-  email : VARCHAR
-  group_id : UUID
-  subscribed_at : TIMESTAMP
-}
+## Technology Stack
 
-entity "AdSendEvent" as AdSendEvent {
-  * id : UUID
-  --
-  ad_id : UUID
-  email_group_id : UUID
-  sent_by : UUID
-  status : ENUM('pending','sent','failed')
-  sent_at : TIMESTAMP
-}
-
-Team ||--o{ User : has
-Team ||--o{ Ad : owns
-User ||--o{ Media : uploads
-User ||--o{ Ad : creates
-Ad ||--o{ AdMedia : links
-Media ||--o{ AdMedia : linked_to
-EmailGroup ||--o{ EmailSubscriber : contains
-Ad ||--o{ AdSendEvent : logs
-EmailGroup ||--o{ AdSendEvent : targeted_by
-User ||--o{ AdSendEvent : triggers
-@enduml
-```
-
-### NoSQL Document Schemas (MongoDB)
-
-![NoSQL Document Schemas](images/nosql_document_schemas.png)
-
-```plantuml
-@startuml
-skinparam classAttributeIconSize 0
-
-class User << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + name : string
-   + email : string
-   + role : string    // 'marketing' or 'consumer'
-   + team_id : ObjectId
-}
-
-class Team << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + name : string
-   + description : string
-   + member_ids : List<ObjectId>
-}
-
-class Media << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + type : string       // 'image' or 'video'
-   + url : string
-   + metadata : object
-   + uploaded_by : ObjectId
-   + created_at : date
-}
-
-class Ad << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + title : string
-   + description : string
-   + media_ids : List<ObjectId>
-   + status : string     // 'draft','scheduled','published'
-   + created_by : ObjectId
-   + team_id : ObjectId
-}
-
-class EmailGroup << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + name : string
-   + description : string
-}
-
-class EmailSubscriber << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + email : string
-   + group_id : ObjectId
-   + subscribed_at : date
-}
-
-class AdSendEvent << (D,#FFAAAA) document >> {
-   + _id : ObjectId
-   + ad_id : ObjectId
-   + email_group_id : ObjectId
-   + sent_by : ObjectId
-   + status : string    // 'pending','sent','failed'
-   + sent_at : date
-}
-@enduml
-```
-
-## 🌐 Core APIs
-
-### Media
-
-- `POST /media` (Upload)
-- `GET /media?type=image` (List)
-- `DELETE /media/{id}`
-
-### Ads
-
-- `POST /ads`
-- `GET /ads`
-- `PUT /ads/{id}`
-- `DELETE /ads/{id}`
-
-### Emails
-
-- `POST /emails`
-- `GET /emails`
-- `POST /email-groups`
-- `GET /email-groups`
-- `POST /ads/{id}/send` (Send ad to email group)
-
-### Teams & Users
-
-- `POST /teams`
-- `GET /teams`
-- `POST /users` (with role & team)
-
-## 📈 Non-Functional Requirements
-
-### High Consistency
-
-- Use a strong consistency database (e.g., PostgreSQL)
-- Eventual consistency okay for analytics, but not for ad content
-
-### High Idempotency
-
-- API endpoints must support idempotency keys (especially `POST /ads/{id}/send`)
-- Avoid duplicate sends or uploads
-
-### Availability & Low Latency
-
-- Use CDN for media
-- Async background jobs for email sending
-- Caching for static lists
+- **Frontend**: TBD
+- **Backend**: Rust with TBD
+- **Databases**: PostgreSQL, MongoDB, Redis for caching
+- **Infrastructure**: AWS (EC2, S3, CloudFront, SQS)
+- **Monitoring**: TBD
+- **CI/CD**: GitHub Actions, Docker
