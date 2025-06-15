@@ -16,6 +16,7 @@ This application provides marketing teams with tools to:
 
 - [Functional Requirements](docs/FUNCTIONAL_REQUIREMENTS.md) - Detailed requirements for all features
 - [Technical Specifications](docs/TECHNICAL_SPECS.md) - Data models, API endpoints, and technical considerations
+- [Component Design](docs/COMPONENT_DESIGN.md) - Architecture diagram and component interactions
 
 ## Workflows
 
