@@ -41,24 +41,52 @@ APIG --> FE
 
 ```plantuml
 @startuml Media_Upload
+' -----------------------------------------------------------
+' Participants (no database/cloud keywords in sequence diagrams)
+' -----------------------------------------------------------
 actor MarketingUser as MU
-participant FE
-participant APIG
-participant MEDIA_SVC
-cloud S3
-cloud CF as "CloudFront CDN"
+participant FE           as "Web / Mobile Front-end"
+participant APIG         as "Public API Gateway"
+participant MEDIA_SVC    as "Media Service"
+participant PG           as "PostgreSQL"
+participant S3           as "Amazon S3"
+participant CF           as "CloudFront CDN"
 
-MU   -> FE           : select image/video
-FE   -> APIG         : POST /media (metadata)
-APIG -> MEDIA_SVC    : request pre-signed URL
-MEDIA_SVC -> S3      : Generate URL (PUT, TTL=15 min)
-S3 --> MEDIA_SVC
-MEDIA_SVC --> APIG   : 201 Created + pre-signed URL
-APIG --> FE
-FE  -> S3            : direct PUT upload
+' -----------------------------------------------------------
+' 1. User chooses a file
+' -----------------------------------------------------------
+MU  -> FE            : choose image / video
+
+' -----------------------------------------------------------
+' 2. Create placeholder + get pre-signed URL
+' -----------------------------------------------------------
+FE  -> APIG          : POST /media  {filename, size, type}
+APIG -> MEDIA_SVC    : createAsset(metadata)
+MEDIA_SVC -> PG      : INSERT asset stub (status=PENDING)
+PG  --> MEDIA_SVC
+
+note right of MEDIA_SVC
+Generate pre-signed PUT URL  
+(expiry = 15 min)
+end note
+
+MEDIA_SVC --> APIG   : 201 Created\n{asset_id, presigned_url}
+APIG --> FE          : returns asset_id + presigned_url
+
+' -----------------------------------------------------------
+' 3. Client uploads directly to S3
+' -----------------------------------------------------------
+FE  -> S3            : HTTP PUT <presigned_url>  (binary)
 S3 --> FE            : 200 OK
-FE  -> APIG          : POST /media/{id}/complete
-APIG -> MEDIA_SVC
+
+' -----------------------------------------------------------
+' 4. Notify backend that upload is complete
+' -----------------------------------------------------------
+FE  -> APIG          : POST /media/{asset_id}/complete
+APIG -> MEDIA_SVC    : markUploaded(asset_id)
+MEDIA_SVC -> PG      : UPDATE asset SET status=READY, path=...
+PG  --> MEDIA_SVC
+
 MEDIA_SVC -> CF      : (optional) Invalidate path
 MEDIA_SVC --> APIG   : 200 OK
 APIG --> FE          : upload confirmed
@@ -68,6 +96,8 @@ APIG --> FE          : upload confirmed
 
 ## 3. Schedule & Send Email Campaign
 
+![Email Campaign Flow](images/email_campaign_flow.png)
+
 ```plantuml
 @startuml Email_Campaign
 actor MarketingUser as MU
@@ -75,29 +105,38 @@ participant FE
 participant APIG
 participant EMAIL_SVC
 participant SCHED_SVC
-queue QUEUE_SQS
-participant EmailWorker as "EMAIL_SVC\nworker"
-cloud ESP as "SES / SendGrid"
+participant QUEUE_SQS       as "SQS Job Queue"
+participant EmailWorker     as "EMAIL_SVC Worker"
+participant ESP             as "SES / SendGrid"
 participant ANALYTICS_SVC
 
-MU  -> FE              : Schedule campaign (UI form)
-FE  -> APIG            : POST /emails  {template, group, time}
+' -----------------------------------------------------------
+' 1. Schedule Campaign
+' -----------------------------------------------------------
+MU  -> FE              : Fill campaign form
+FE  -> APIG            : POST /emails {template, group, time}
 APIG -> EMAIL_SVC      : create draft
 EMAIL_SVC --> APIG     : 201 Created (campaign_id)
 
-== scheduling ==
+' -----------------------------------------------------------
+' 2. Scheduling
+' -----------------------------------------------------------
 APIG -> SCHED_SVC      : POST /schedule (campaign_id, datetime)
 SCHED_SVC --> APIG     : 202 Accepted
 
-every 60 s
+' -----------------------------------------------------------
+' 3. Scheduler pushes job
+' -----------------------------------------------------------
 SCHED_SVC -> QUEUE_SQS : push due job (campaign_id)
 
-== worker ==
-EmailWorker <-- QUEUE_SQS : pull job
-EmailWorker -> EMAIL_SVC   : fetch campaign + recipients
-EmailWorker -> ESP         : send batch
-ESP --> EmailWorker        : delivery/response
-EmailWorker -> ANALYTICS_SVC: emit send events (bounces, opens)
+' -----------------------------------------------------------
+' 4. Worker handles job
+' -----------------------------------------------------------
+QUEUE_SQS --> EmailWorker     : pull job
+EmailWorker -> EMAIL_SVC      : fetch campaign + recipients
+EmailWorker -> ESP            : send batch
+ESP --> EmailWorker           : delivery status
+EmailWorker -> ANALYTICS_SVC  : emit send events
 @enduml
 ```
 
