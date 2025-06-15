@@ -2,6 +2,8 @@
 
 ## 1. User Authentication (login → JWT → refresh)
 
+![Login Flow](images/login_flow.png)
+
 ```plantuml
 @startuml Login_Flow
 actor User
