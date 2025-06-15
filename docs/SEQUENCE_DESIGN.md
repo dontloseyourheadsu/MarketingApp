@@ -37,6 +37,8 @@ APIG --> FE
 
 ## 2. Media Upload (via pre-signed S3 URL)
 
+![Media Upload Flow](images/media_upload_flow.png)
+
 ```plantuml
 @startuml Media_Upload
 actor MarketingUser as MU
