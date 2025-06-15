@@ -144,38 +144,46 @@ EmailWorker -> ANALYTICS_SVC  : emit send events
 
 ## 4. Subscriber Unsubscribe (global & group-level)
 
+![Unsubscribe Flow](images/unsubscribe_flow.png)
+
 ```plantuml
 @startuml Unsubscribe_Flow
 actor Subscriber
-participant EmailClient as "Mail Client"
-participant FE          as "Preference Centre"
+participant EmailClient     as "Mail Client"
+participant FE              as "Preference Centre"
 participant APIG
-participant UNSUB_SVC
-participant PG
-participant EMAIL_SVC
-cloud ESP
+participant UNSUB_SVC       as "Unsubscribe Service"
+participant PG              as "PostgreSQL"
+participant EMAIL_SVC       as "Email Campaign Service"
+participant ESP             as "SES / SendGrid"
 
-== user clicks link ==
-Subscriber -> EmailClient : click JWT unsubscribe URL
+' -----------------------------------------------------------
+' 1. User clicks email unsubscribe link
+' -----------------------------------------------------------
+Subscriber -> EmailClient : click unsubscribe link (JWT)
 EmailClient -> FE         : open /emails/unsubscribe?token=...
 FE -> APIG                : GET /preferences (JWT)
-APIG -> UNSUB_SVC         : validate JWT, look up subscriber
-UNSUB_SVC -> PG           : SELECT subscription
+APIG -> UNSUB_SVC         : validate token, lookup subscriber
+UNSUB_SVC -> PG           : SELECT subscription preferences
 PG --> UNSUB_SVC
-UNSUB_SVC --> APIG        : 200 + current status
-APIG --> FE               : render preference page
+UNSUB_SVC --> APIG        : 200 OK + current prefs
+APIG --> FE               : render preference centre
 
-== user confirms ==
-Subscriber -> FE          : press “Unsubscribe”
-FE -> APIG                : POST /emails/unsubscribe { global=true }
-APIG -> UNSUB_SVC
+' -----------------------------------------------------------
+' 2. User submits unsubscribe
+' -----------------------------------------------------------
+Subscriber -> FE          : click "Unsubscribe"
+FE -> APIG                : POST /emails/unsubscribe {global=true}
+APIG -> UNSUB_SVC         : request unsubscribe
 UNSUB_SVC -> PG           : UPDATE subscribers SET global_opt_out=true
 UNSUB_SVC -> EMAIL_SVC    : publish preference-updated event
 UNSUB_SVC --> APIG        : 204 No Content
-APIG --> FE               : show success
+APIG --> FE               : success screen
 
-== confirmation email ==
-UNSUB_SVC -> ESP          : Send confirmation
+' -----------------------------------------------------------
+' 3. Confirmation email (optional)
+' -----------------------------------------------------------
+UNSUB_SVC -> ESP          : send confirmation email
 ESP --> UNSUB_SVC         : 202 Accepted
 @enduml
 ```
