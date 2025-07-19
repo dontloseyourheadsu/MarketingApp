@@ -1,40 +1,30 @@
-﻿# Marketing App
+﻿#Marketing app
 
-A comprehensive application for managing marketing content, email campaigns, and advertising materials.
+Simple marketing app to showcase products and services through images or videos that connect to third-party services.
 
-## Overview
+## Functional Requirements
 
-This application provides marketing teams with tools to:
+- CRUD images
+- CRUD videos
+- CRUD ads
+- CRUD subscribed emails
+- CRUD Organizations
+- Group emails
+- Send selected ads to emails with scheduling options
 
-- Manage media content (images and videos)
-- Create and maintain advertisements
-- Manage email subscriber lists
-- Send targeted ad campaigns to email subscribers
-- Collaborate within marketing teams
+(Future: Publish/unpublish google ads)
 
-## Documentation
+## Non-Functional Requirements
 
-- [Functional Requirements](docs/FUNCTIONAL_REQUIREMENTS.md) - Detailed requirements for all features
-- [Technical Specifications](docs/TECHNICAL_SPECS.md) - Data models, API endpoints, and technical considerations
-- [Component Design](docs/COMPONENT_DESIGN.md) - Architecture diagram and component interactions
-- [Sequence Design](docs/SEQUENCE_DESIGN.md) - Detailed sequence diagrams for key workflows
+- Performance: The app should load and respond quickly to user interactions.
+- Scalability: The app should be able to handle a growing number of users and data.
+- Security: User data, especially email addresses, must be stored securely and comply with data protection regulations.
+- Usability: The app should have an intuitive interface for both marketing users and administrators.
 
-## Workflows
+## Tech Stack
 
-### A. Upload Ad & Send to Email
-
-1. Marketing user uploads image/video
-2. Creates an Ad associating media
-3. Selects email group
-4. Sends Ad → Email group receives content
-
-### B. Team Collaboration
-
-1. Admin creates a team
-2. Adds marketing users
-3. Team shares media/ad access
-
-### C. [Future] Publish to Google Ads
-
-1. OAuth2 connect Google Ads account
-2. Select ad → publish/unpublish via API
+- Frontend: Angular
+- Backend: Axum
+- Database: PostgreSQL
+- Authentication: JWT, OAuth
+- Cloud Storage: AWS S3
