@@ -1,6 +1,6 @@
-﻿#Marketing app
+﻿# Marketing app
 
-Simple marketing app to showcase products and services through images or videos that connect to third-party services.
+Simple marketing app to showcase products and services through images or videos that connect to third-party ad services.
 
 ## Functional Requirements
 
