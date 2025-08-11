@@ -1,1 +1,32 @@
-﻿
+﻿# === General ===
+.DS_Store
+Thumbs.db
+*.log
+
+# === Editors / IDEs ===
+.vscode/
+.idea/
+*.iml
+.fleet/
+
+# === Environments / Secrets ===
+.env
+.env.*
+!.env.example
+
+# === Rust ===
+target/
+**/target/
+**/*.rs.bk
+
+# Keep Cargo.lock committed for apps (do not ignore)
+
+# === WASM / Leptos tooling ===
+dist/
+pkg/
+wasm-pack.log
+.trunk/
+frontend/dist/
+frontend/pkg/
+frontend/.cache/
+
