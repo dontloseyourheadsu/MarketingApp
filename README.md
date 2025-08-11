@@ -23,8 +23,39 @@ Simple marketing app to showcase products and services through images or videos 
 
 ## Tech Stack
 
-- Frontend: Angular
-- Backend: Axum
+- Frontend: Leptos (Rust WebAssembly)
+- Backend: Axum (Rust)
 - Database: PostgreSQL
 - Authentication: JWT, OAuth
 - Cloud Storage: AWS S3
+
+## Getting Started
+
+### Prerequisites
+
+Install Rust and required tools:
+
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# Add WebAssembly target
+rustup target add wasm32-unknown-unknown
+
+# Install Trunk for serving the frontend
+cargo install trunk
+```
+
+### Running the Application
+
+1. **Frontend** (from `/frontend` directory):
+
+   ```bash
+   trunk serve --open
+   ```
+
+2. **Backend** (from `/backend` directory):
+   ```bash
+   cargo run
+   ```
