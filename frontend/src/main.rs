@@ -1,5 +1,11 @@
-use leptos::prelude::*;
+use leptos::mount::mount_to_body;
+
+mod app;
+mod nav_bar;
+mod pages;
+
+use app::App;
 
 fn main() {
-    leptos::mount::mount_to_body(|| view! { <p>"Hello, world!"</p> })
+    mount_to_body(App);
 }
