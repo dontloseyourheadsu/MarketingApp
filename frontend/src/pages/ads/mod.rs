@@ -1,10 +1,10 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn AdvertisementsDashboard() -> impl IntoView {
+pub fn AdsPage() -> impl IntoView {
     view! {
         <div class="page advertisements-dashboard">
-            <h1 class="page-title">"Advertisements Dashboard"</h1>
+            <h1 class="page-title">"Ads Management"</h1>
             
             <div class="filters-section">
                 <div class="filters-placeholder">
