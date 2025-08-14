@@ -10,7 +10,7 @@ pub fn App() -> impl IntoView {
     view! {
         <div class="app-container">
             <NavigationBar is_collapsed=is_collapsed set_collapsed=set_collapsed />
-            
+
             <main class=move || format!("main-content {}", if is_collapsed.get() { "sidebar-collapsed" } else { "" })>
                 <AdvertisementsDashboard />
             </main>
