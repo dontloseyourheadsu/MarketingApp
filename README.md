@@ -25,9 +25,9 @@ Simple marketing app to showcase products and services through images or videos 
 
 - Frontend: Leptos (Rust WebAssembly)
 - Backend: Axum (Rust)
-- Database: PostgreSQL
-- Authentication: JWT, OAuth
-- Cloud Storage: AWS S3
+- Database: SurrealDB
+- Authentication: JWT, OAuth (SurrealDB built-in)
+- Storage: SurrealDB (replaces traditional object storage)
 
 ## Getting Started
 
@@ -45,17 +45,28 @@ rustup target add wasm32-unknown-unknown
 
 # Install Trunk for serving the frontend
 cargo install trunk
+
+# Ensure Docker is installed and running for SurrealDB
+# Ubuntu/Debian: sudo apt install docker.io docker-compose
+# macOS: Install Docker Desktop
+# Windows: Install Docker Desktop
 ```
 
 ### Running the Application
 
-1. **Frontend** (from `/frontend` directory):
+1. **Database** (from `/database` directory):
+
+   ```bash
+   ./setup.sh
+   ```
+
+2. **Frontend** (from `/frontend` directory):
 
    ```bash
    trunk serve --open
    ```
 
-2. **Backend** (from `/backend` directory):
+3. **Backend** (from `/backend` directory):
    ```bash
    cargo run
    ```
